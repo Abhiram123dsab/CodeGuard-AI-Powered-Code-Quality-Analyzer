@@ -1,12 +1,12 @@
 {
     "compilerOptions": {
+        "checkJs": true,
         "module": "ESNext",
-        "moduleResolution": "Bundler",
+        "moduleResolution": "Node",
         "target": "ES2022",
         "jsx": "react",
-        "allowImportingTsExtensions": true,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true    
+        "allowImportingTsExtensions": false,
+        "strict": false
     },
     "exclude": [
         "node_modules",

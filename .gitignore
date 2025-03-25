@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.venv
+venv/
+env/
+.python-version
+
+# Node.js
+node_modules/
+.npm
+.pnpm
+.yarn-integrity
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build directories
+build/
+dist/
+frontend/.next/
+frontend/out/
+
+# Testing
+coverage/
+htmlcov/
+
+# IDE specific
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated
+.DS_Store
+Thumbs.db

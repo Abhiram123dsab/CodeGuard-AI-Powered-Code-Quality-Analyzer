@@ -1,8 +1,13 @@
 import React from 'react';
 
 const ScoreDisplay = ({ results }) => {
-  // Use the actual results from the API
-  const { overall_score, categories, recommendations } = results;
+  if (!results?.categories) return (
+    <div className="error-message">
+      <p>No analysis data available</p>
+    </div>
+  );
+
+  const { score, categories, recommendations = [] } = results;
 
   // Function to determine score color class based on score value
   const getScoreColorClass = (score) => {
@@ -13,8 +18,13 @@ const ScoreDisplay = ({ results }) => {
 
   // Get the best and worst categories
   const categoryEntries = Object.entries(categories);
-  const bestCategory = [...categoryEntries].sort((a, b) => b[1].score - a[1].score)[0];
-  const worstCategory = [...categoryEntries].sort((a, b) => a[1].score - b[1].score)[0];
+  const validEntries = categoryEntries.filter(([_, data]) => data?.score !== undefined);
+  const bestCategory = validEntries.length > 0 
+    ? validEntries.sort((a, b) => (b[1].score || 0) - (a[1].score || 0))[0] 
+    : ['No Data', { score: 0 }];
+  const worstCategory = validEntries.length > 0 
+    ? validEntries.sort((a, b) => (a[1].score || 0) - (b[1].score || 0))[0]
+    : ['No Data', { score: 0 }];
 
   return (
     <div className="results-container">
@@ -23,9 +33,9 @@ const ScoreDisplay = ({ results }) => {
         <div className="overall-score-container">
           <div 
             className="overall-score-circle" 
-            style={{'--progress': `${overall_score}%`}}
+            style={{'--progress-width': `${score}%`}}
           >
-            <span className="overall-score-value">{overall_score}</span>
+            <span className="overall-score-value">{score}</span>
           </div>
           <div>Overall Score</div>
         </div>
@@ -38,14 +48,14 @@ const ScoreDisplay = ({ results }) => {
             <div className="highlight-item">
               <span className="highlight-label">Strongest Area:</span>
               <span className={`highlight-value ${getScoreColorClass(bestCategory[1].score)}`}>
-                {bestCategory[0].replace('_', ' ').toUpperCase()} ({bestCategory[1].score})
+                {bestCategory[0].replace(/_/g, ' ').toUpperCase()} ({bestCategory[1]?.score ?? 0})
               </span>
             </div>
             
             <div className="highlight-item">
               <span className="highlight-label">Needs Improvement:</span>
               <span className={`highlight-value ${getScoreColorClass(worstCategory[1].score)}`}>
-                {worstCategory[0].replace('_', ' ').toUpperCase()} ({worstCategory[1].score})
+                {worstCategory[0].replace(/_/g, ' ').toUpperCase()} ({worstCategory[1]?.score ?? 0})
               </span>
             </div>
           </div>
@@ -56,23 +66,23 @@ const ScoreDisplay = ({ results }) => {
       <h3>Category Breakdown</h3>
       <div className="category-grid">
         {Object.entries(categories).map(([category, data]) => {
-          const scoreColorClass = getScoreColorClass(data.score);
+          const scoreColorClass = getScoreColorClass(data?.score || 0);
           
           return (
             <div key={category} className="category-card">
-              <h3>{category.replace('_', ' ').toUpperCase()}</h3>
+              <h3>{category.replace(/_/g, ' ').toUpperCase()}</h3>
               
               <div className="score-meter-container">
                 <div className="score-value">
-                  <span className={scoreColorClass}>{data.score}/100</span>
+                  <span className={scoreColorClass}>{data?.score ?? 0}/100</span>
                 </div>
-                <div className="score-meter" style={{'--score': data.score}}></div>
+                <div className="score-meter" style={{'--score': data?.score || 0 }}></div>
               </div>
               
               <div className="category-details">
                 <div className="issues-count">
                   <span className="issues-label">Issues Found:</span>
-                  <span className="issues-value">{data.issues}</span>
+                  <span className="issues-value">{data?.issues ?? 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -83,7 +93,7 @@ const ScoreDisplay = ({ results }) => {
       {/* Recommendations */}
       <div className="recommendations">
         <h3>Recommendations to Improve Your Code</h3>
-        {recommendations.length > 0 ? (
+        {recommendations?.length > 0 ? (
           <div>
             {recommendations.map((rec, index) => (
               <div key={index} className="recommendation-item">

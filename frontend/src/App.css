@@ -9,13 +9,15 @@
 }
 
 .upload-button {
-    display: inline-block;
+    display: inline-flex !important;
     padding: 1rem 2rem;
     background: #2196F3;
     color: white;
     border-radius: 4px;
     cursor: pointer;
     transition: background 0.3s;
+    align-items: center;
+    justify-content: center;
 }
 
 .upload-button:hover {
@@ -128,6 +130,18 @@
     position: relative;
 }
 
+.score-high {
+    color: var(--score-high);
+}
+
+.score-medium {
+    color: var(--score-medium);
+}
+
+.score-low {
+    color: var(--score-low);
+}
+
 .score-meter::after {
     content: '';
     position: absolute;
@@ -138,6 +152,12 @@
     background: linear-gradient(90deg, var(--score-low) 0%, var(--score-high) 100%);
     border-radius: 4px;
     transition: width 0.5s ease;
+}
+
+:root {
+    --score-high: #4cd97b;
+    --score-medium: #FFC107;
+    --score-low: #F44336;
 }
 
 .recommendations {
@@ -249,7 +269,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    background: conic-gradient(var(--score-high) var(--progress), #eee 0);
+    background: conic-gradient(var(--score-high) var(--progress-width), #eee 0);
     animation: scaleUp 0.5s ease-out;
 }
 
@@ -302,7 +322,7 @@
     flex-direction: column;
     gap: 0.25rem;
     margin: 1rem 0;
-    background: linear-gradient(90deg, #4cd97b, #4ca5d9);
+    background: linear-gradient(90deg, var(--score-high), #4ca5d9);
     background-size: 200% 200%;
     animation: gradientPulse 3s ease infinite;
     border-radius: 8px;
