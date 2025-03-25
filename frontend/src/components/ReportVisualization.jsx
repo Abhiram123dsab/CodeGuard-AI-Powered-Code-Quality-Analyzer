@@ -1,14 +1,35 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
+const renderCustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="custom-tooltip p-2 bg-white border rounded">
+        <p className="label mb-1">{`${payload[0].payload.name}`}</p>
+        <p className="score">Score: {payload[0].value}</p>
+        <p className="issues">Issues: {payload[0].payload.issues}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function ReportVisualization({ analysisData }) {
+  if (!analysisData || !analysisData.categories) {
+    return (
+      <div className="report-visualization mt-4 text-center p-4">
+        <h3>No analysis data available</h3>
+        <p>Upload a file to generate code quality report</p>
+      </div>
+    );
+  }
   const processData = (data) => ({
     categories: Object.entries(data.categories).map(([name, values]) => ({
       name,
-      score: values.score,
-      issues: values.issues
+      score: values?.score ?? 0,
+      issues: values?.issues ?? 0
     })),
-    overall: data.overall_score
+    overall: data.overall_score || 0
   });
 
   const chartData = processData(analysisData);
@@ -24,7 +45,7 @@ export default function ReportVisualization({ analysisData }) {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis domain={[0, 100]} />
-            <Tooltip />
+            <Tooltip content={renderCustomTooltip} />
             <Legend />
             <Bar dataKey="score" fill="#8884d8" />
           </BarChart>

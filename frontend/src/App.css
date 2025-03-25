@@ -202,6 +202,38 @@
     }
 }
 
+@keyframes scaleUp {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes gradientPulse {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes progressLoad {
+    from {
+        width: 0%;
+    }
+    to {
+        width: var(--progress-width);
+    }
+}
+
 .overall-score-container {
     display: flex;
     flex-direction: column;
@@ -218,6 +250,7 @@
     justify-content: center;
     position: relative;
     background: conic-gradient(var(--score-high) var(--progress), #eee 0);
+    animation: scaleUp 0.5s ease-out;
 }
 
 .overall-score-circle::before {
@@ -269,6 +302,18 @@
     flex-direction: column;
     gap: 0.25rem;
     margin: 1rem 0;
+    background: linear-gradient(90deg, #4cd97b, #4ca5d9);
+    background-size: 200% 200%;
+    animation: gradientPulse 3s ease infinite;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #4cd97b;
+    border-radius: 4px;
+    animation: progressLoad 1s ease-out forwards;
 }
 
 .score-value {

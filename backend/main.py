@@ -31,12 +31,31 @@ async def analyze_code(file: UploadFile = File(...)):
         # ESLint check moved to subprocess handling
         pass
     
-    from openai import OpenAI
-import os
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# Initialize OpenAI client with environment variable
+from openai import OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_ai_suggestions(code: str, issues: list) -> str:
+PYTHON_WEIGHTS = {
+    'code_quality': 0.60,
+    'code_style': 0.10,
+    'naming': 0.10,
+    'modularity': 0.15,
+    'comments': 0.05
+}
+
+JAVASCRIPT_WEIGHTS = {
+    'code_quality': 0.50,
+    'code_style': 0.20,
+    'security': 0.20,
+    'modularity': 0.10
+}
+# Weight definitions moved before calculate_metrics
+
+def generate_ai_suggestions(code: str, issues: list, client: OpenAI) -> str:
     """Generate AI-powered code improvement suggestions using OpenAI"""
     try:
         prompt = f"Analyze this code and provide specific improvements:\n\n{code}\n\nIdentified issues: {issues}\n\nSuggestions:"
@@ -49,7 +68,7 @@ def generate_ai_suggestions(code: str, issues: list) -> str:
         return f"AI suggestions unavailable: {str(e)}"
 
 
-if len(content) == 0:
+    if len(content) == 0:
         # For empty files, return a structured response with appropriate categories based on file type
         if file.filename.endswith('.py'):
             categories = {
@@ -72,89 +91,74 @@ if len(content) == 0:
             'categories': categories,
             'recommendations': ['Empty file detected - no code to analyze']
         }
-    
-    temp_path = f"temp_{file.filename}"
-    
-    with open(temp_path, "wb") as f:
-        f.write(content)
-    
     try:
-        if file.filename.endswith('.py'):
-            # Python analysis
-            pylint = subprocess.run(['pylint', temp_path], capture_output=True, text=True)
-            flake8 = subprocess.run(['flake8', temp_path], capture_output=True, text=True)
-            radon = subprocess.run(['radon', 'mi', temp_path], capture_output=True, text=True)
-            if radon.returncode != 0:
-                raise HTTPException(status_code=500, detail=f"Radon analysis failed: {radon.stderr}")
-            
-            metrics = calculate_metrics(
-                pylint_output=pylint.stdout,
-                flake8_output=flake8.stdout,
-                radon_output=radon.stdout,
-                language='python'
-            )
-            # Add AI suggestions
-            ai_analysis = generate_ai_suggestions(content.decode(), metrics['recommendations'])
-            metrics['recommendations'].append(f"\nAI Suggestions:\n{ai_analysis}")
-            return metrics
-        if not file.filename.endswith(('.py', '.js', '.jsx')):
-            raise HTTPException(status_code=400, detail="Unsupported file type. Supported extensions: .py, .js, .jsx")
-        
-        if file.filename.endswith(('.js', '.jsx')):
-            # JavaScript analysis
-            try:
-                eslint = subprocess.run(['eslint', '-f', 'json', temp_path], capture_output=True, text=True)
+        temp_path = f"temp_{file.filename}"
+        with open(temp_path, "wb") as f:
+            f.write(content)
+
+            if file.filename.endswith('.py'):
+                # Python analysis
+                pylint = subprocess.run(['pylint', temp_path], capture_output=True, text=True)
+                flake8 = subprocess.run(['flake8', temp_path], capture_output=True, text=True)
+                radon = subprocess.run(['radon', 'mi', temp_path], capture_output=True, text=True)
+                if radon.returncode != 0:
+                    raise HTTPException(status_code=500, detail=f"Radon analysis failed: {radon.stderr}")
                 
-                # Parse ESLint JSON output
-                try:
-                    # Even if ESLint returns non-zero (which it does for files with issues),
-                    # we still want to analyze the output
-                    eslint_results = json.loads(eslint.stdout) if eslint.stdout.strip() else []
-                    
-                    metrics = calculate_metrics(
-                        eslint_output = [msg for result in eslint_results for msg in result.get('messages', [])],
-                        language='javascript'
-                    )
-            # Add AI suggestions
-            ai_analysis = generate_ai_suggestions(content.decode(), metrics['recommendations'])
-            metrics['recommendations'].append(f"\nAI Suggestions:\n{ai_analysis}")
-            return metrics
-                except json.JSONDecodeError:
-                    # If we can't parse the output, it's likely an error with ESLint itself
-                    raise HTTPException(status_code=500, detail="Failed to parse ESLint output")
+                metrics = calculate_metrics(
+                    pylint_output=pylint.stdout,
+                    flake8_output=flake8.stdout,
+                    radon_output=radon.stdout,
+                    language='python'
+                )
+                # Add AI suggestions
+                ai_analysis = generate_ai_suggestions(content.decode(), metrics['recommendations'], client)
+                metrics['recommendations'].append(f"\nAI Suggestions:\n{ai_analysis}")
+                return metrics
             
-            except FileNotFoundError:
-                # For test_missing_eslint, we need to ensure this returns a 500 error
-                raise HTTPException(status_code=500, detail="ESLint not installed - run 'npm install eslint -g'")
-            except Exception as e:
-                if isinstance(e, FileNotFoundError):
+            if file.filename.endswith(('.js', '.jsx')):
+                # JavaScript analysis
+                try:
+                    eslint = subprocess.run(['eslint', '-f', 'json', temp_path], capture_output=True, text=True)
+                    
+                    # Parse ESLint JSON output
+                    try:
+                        # Even if ESLint returns non-zero (which it does for files with issues),
+                        # we still want to analyze the output
+                        eslint_results = json.loads(eslint.stdout) if eslint.stdout.strip() else []
+                        
+                        metrics = calculate_metrics(
+                            eslint_output = [msg for result in eslint_results for msg in result.get('messages', [])],
+                            language='javascript'
+                        )
+                        # Add AI suggestions
+                        ai_analysis = generate_ai_suggestions(content.decode(), metrics['recommendations'], client)
+                        metrics['recommendations'].append(f"\nAI Suggestions:\n{ai_analysis}")
+                        return metrics
+                    except json.JSONDecodeError:
+                        # If we can't parse the output, it's likely an error with ESLint itself
+                        raise HTTPException(status_code=500, detail="Failed to parse ESLint output")
+                
+                except FileNotFoundError:
+                    # For test_missing_eslint, we need to ensure this returns a 500 error
                     raise HTTPException(status_code=500, detail="ESLint not installed - run 'npm install eslint -g'")
-                # For other errors, return basic structure
-                return {
-                    'overall_score': 0,
-                    'categories': {
-                        'code_quality': {'score': 0, 'issues': 1},
-                        'code_style': {'score': 0, 'issues': 1},
-                        'security': {'score': 0, 'issues': 1},
-                        'modularity': {'score': 0, 'issues': 1}
-                    },
-                    'recommendations': [f"Analysis error: {str(e)}"]
-                }
+                except Exception as e:
+                    if isinstance(e, FileNotFoundError):
+                        raise HTTPException(status_code=500, detail="ESLint not installed - run 'npm install eslint -g'")
+                    # For other errors, return basic structure
+                    categories = {category: {'score': 0, 'issues': 1} for category in JAVASCRIPT_WEIGHTS}
+                    return {
+                            'overall_score': 0,
+                            'categories': categories,
+                            'recommendations': [f"Analysis error: {str(e)}"]
+                        }
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
-
 def calculate_metrics(pylint_output=None, flake8_output=None, radon_output=None, eslint_output=None, language='python'):
     # Initialize metrics structure
-    security_issues = 0
     metrics = {
         'overall_score': 100,
-        'categories': {
-            'code_quality': {'score': 100, 'issues': 0},
-            'code_style': {'score': 100, 'issues': 0},
-            'modularity': {'score': 100, 'issues': 0}
-        },
+        'categories': {},
         'recommendations': []
     }
     
@@ -273,23 +277,33 @@ def calculate_metrics(pylint_output=None, flake8_output=None, radon_output=None,
         
         metrics['recommendations'] = recommendations
     
-    # Calculate weighted score using appropriate weights
+    # Calculate overall score with weighted average
     if language == 'python':
-        weights = PYTHON_WEIGHTS
-        # Remove security category for Python
-        if 'security' in metrics['categories']:
-            del metrics['categories']['security']
+        overall = sum(metrics['categories'][cat]['score'] * PYTHON_WEIGHTS[cat] for cat in PYTHON_WEIGHTS)
     else:
-        weights = JAVASCRIPT_WEIGHTS
+        overall = sum(metrics['categories'][cat]['score'] * JAVASCRIPT_WEIGHTS[cat] for cat in JAVASCRIPT_WEIGHTS)
+        
+    metrics['overall_score'] = round(overall, 1)
 
-    metrics['overall_score'] = int(sum(
-        metrics['categories'][cat].get('score', 100) * weight
-        for cat, weight in weights.items()
-    ))
-    
+    # Add security analysis for Python
+    if language == 'python':
+        try:
+            bandit = subprocess.run(['bandit', '-r', temp_path], capture_output=True, text=True)
+            security_issues = len(re.findall(r'High confidence issues found: (\d+)', bandit.stdout))
+            metrics['categories']['security'] = {
+                'score': max(0, 100 - security_issues*25),
+                'issues': security_issues
+            }
+        except Exception as e:
+            metrics['recommendations'].append(f'Security analysis failed: {str(e)}')
+
+    # Handle undefined variables from linter output
+    undefined_issues = sum(1 for rec in metrics['recommendations'] if 'undefined variable' in rec)
+    if undefined_issues > 0:
+        metrics['overall_score'] = max(0, metrics['overall_score'] - (undefined_issues * 10))
+
     return metrics
 
-# Weight configurations for different languages
 PYTHON_WEIGHTS = {
     'code_quality': 0.60,
     'code_style': 0.10,
