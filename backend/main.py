@@ -31,7 +31,25 @@ async def analyze_code(file: UploadFile = File(...)):
         # ESLint check moved to subprocess handling
         pass
     
-    if len(content) == 0:
+    from openai import OpenAI
+import os
+
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+def generate_ai_suggestions(code: str, issues: list) -> str:
+    """Generate AI-powered code improvement suggestions using OpenAI"""
+    try:
+        prompt = f"Analyze this code and provide specific improvements:\n\n{code}\n\nIdentified issues: {issues}\n\nSuggestions:"
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"AI suggestions unavailable: {str(e)}"
+
+
+if len(content) == 0:
         # For empty files, return a structured response with appropriate categories based on file type
         if file.filename.endswith('.py'):
             categories = {
@@ -69,12 +87,16 @@ async def analyze_code(file: UploadFile = File(...)):
             if radon.returncode != 0:
                 raise HTTPException(status_code=500, detail=f"Radon analysis failed: {radon.stderr}")
             
-            return calculate_metrics(
+            metrics = calculate_metrics(
                 pylint_output=pylint.stdout,
                 flake8_output=flake8.stdout,
                 radon_output=radon.stdout,
                 language='python'
             )
+            # Add AI suggestions
+            ai_analysis = generate_ai_suggestions(content.decode(), metrics['recommendations'])
+            metrics['recommendations'].append(f"\nAI Suggestions:\n{ai_analysis}")
+            return metrics
         if not file.filename.endswith(('.py', '.js', '.jsx')):
             raise HTTPException(status_code=400, detail="Unsupported file type. Supported extensions: .py, .js, .jsx")
         
@@ -89,10 +111,14 @@ async def analyze_code(file: UploadFile = File(...)):
                     # we still want to analyze the output
                     eslint_results = json.loads(eslint.stdout) if eslint.stdout.strip() else []
                     
-                    return calculate_metrics(
+                    metrics = calculate_metrics(
                         eslint_output = [msg for result in eslint_results for msg in result.get('messages', [])],
                         language='javascript'
                     )
+            # Add AI suggestions
+            ai_analysis = generate_ai_suggestions(content.decode(), metrics['recommendations'])
+            metrics['recommendations'].append(f"\nAI Suggestions:\n{ai_analysis}")
+            return metrics
                 except json.JSONDecodeError:
                     # If we can't parse the output, it's likely an error with ESLint itself
                     raise HTTPException(status_code=500, detail="Failed to parse ESLint output")
