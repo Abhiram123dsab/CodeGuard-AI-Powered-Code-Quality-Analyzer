@@ -31,6 +31,14 @@ jobs:
       working-directory: ./backend
       run: pytest -v
 
+    - name: Run ESLint
+      working-directory: ./frontend
+      run: npx eslint .
+
+    - name: Run Bandit security scan
+      working-directory: ./backend
+      run: bandit -r .
+
     - name: Run Python linters
       working-directory: ./backend
       run: |
@@ -45,31 +53,7 @@ jobs:
       working-directory: ./frontend
       run: npx eslint . --ext .js,.jsx
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
 
-    - name: Install Python dependencies
-      run: |
-        cd backend
-        pip install -r requirements.txt
-
-    - name: Run Python linters
-      run: |
-        pylint --output-format=text backend/
-        flake8 backend/
-        radon cc backend/
-
-    - name: Install frontend dependencies
-      run: |
-        cd frontend
-        npm ci
-
-    - name: Run ESLint
-      run: |
-        cd frontend
-        npx eslint . --ext .js,.jsx
 
     - name: Post analysis results
       if: always()
