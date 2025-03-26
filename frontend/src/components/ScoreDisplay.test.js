@@ -2,37 +2,48 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import ScoreDisplay from './ScoreDisplay';
 
+// @ts-ignore
 describe('ScoreDisplay Component', () => {
             const mockResults = {
-                score: 75,
+                overall_score: 75,
                 categories: {
-                    security: { score: 85, issues: 2 },
-                    performance: { score: 65, issues: 5 }
+                    code_quality: { score: 90, issues: 3 },
+                    code_style: { score: 80, issues: 4 },
+                    naming: { score: 85, issues: 2 },
+                    modularity: { score: 88, issues: 1 }
                 },
                 recommendations: ['Sample recommendation']
             };
 
+            // @ts-ignore
             test('renders overall score correctly', () => {
                         render( < ScoreDisplay results = { mockResults }
                             />);
+                            // @ts-ignore
                             expect(screen.getByText('75')).toBeInTheDocument();
                         });
 
+                    // @ts-ignore
                     test('displays category breakdown', () => {
                             render( < ScoreDisplay results = { mockResults }
                                 />);
-                                expect(screen.getByText('SECURITY')).toBeInTheDocument(); expect(screen.getByText('PERFORMANCE')).toBeInTheDocument();
+                                // @ts-ignore
+                                expect(screen.getByText('CODE QUALITY')).toBeInTheDocument(); expect(screen.getByText('CODE STYLE')).toBeInTheDocument();
                             });
 
+                        // @ts-ignore
                         test('shows recommendations when available', () => {
                                 render( < ScoreDisplay results = { mockResults }
                                     />);
+                                    // @ts-ignore
                                     expect(screen.getByText('Sample recommendation')).toBeInTheDocument();
                                 });
 
+                            // @ts-ignore
                             test('handles missing results', () => {
                                     render( < ScoreDisplay results = { null }
                                         />);
+                                        // @ts-ignore
                                         expect(screen.getByText('No analysis data available')).toBeInTheDocument();
                                     });
                             });

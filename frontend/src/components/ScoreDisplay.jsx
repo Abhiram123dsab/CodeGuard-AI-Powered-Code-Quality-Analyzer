@@ -7,7 +7,7 @@ const ScoreDisplay = ({ results }) => {
     </div>
   );
 
-  const { score, categories, recommendations = [] } = results;
+  const { overall_score = 0, categories, recommendations = [] } = results;
 
   // Function to determine score color class based on score value
   const getScoreColorClass = (score) => {
@@ -33,9 +33,10 @@ const ScoreDisplay = ({ results }) => {
         <div className="overall-score-container">
           <div 
             className="overall-score-circle" 
-            style={{'--progress-width': `${score}%`}}
+            // @ts-ignore
+            style={{'--progress-width': `${overall_score}%`}}
           >
-            <span className="overall-score-value">{score}</span>
+            <span className="overall-score-value">{overall_score}</span>
           </div>
           <div>Overall Score</div>
         </div>
@@ -48,14 +49,18 @@ const ScoreDisplay = ({ results }) => {
             <div className="highlight-item">
               <span className="highlight-label">Strongest Area:</span>
               <span className={`highlight-value ${getScoreColorClass(bestCategory[1].score)}`}>
-                {bestCategory[0].replace(/_/g, ' ').toUpperCase()} ({bestCategory[1]?.score ?? 0})
+                {bestCategory[0].
+// @ts-ignore
+                replace(/_/g, ' ').toUpperCase()} ({bestCategory[1]?.score ?? 0})
               </span>
             </div>
             
             <div className="highlight-item">
               <span className="highlight-label">Needs Improvement:</span>
               <span className={`highlight-value ${getScoreColorClass(worstCategory[1].score)}`}>
-                {worstCategory[0].replace(/_/g, ' ').toUpperCase()} ({worstCategory[1]?.score ?? 0})
+                {worstCategory[0].
+// @ts-ignore
+                replace(/_/g, ' ').toUpperCase()} ({worstCategory[1]?.score ?? 0})
               </span>
             </div>
           </div>
@@ -76,7 +81,9 @@ const ScoreDisplay = ({ results }) => {
                 <div className="score-value">
                   <span className={scoreColorClass}>{data?.score ?? 0}/100</span>
                 </div>
-                <div className="score-meter" style={{'--score': data?.score || 0 }}></div>
+                <div className="score-meter" style={{
+// @ts-ignore
+                '--score': data?.score || 0 }}></div>
               </div>
               
               <div className="category-details">
