@@ -1,5 +1,8 @@
 # CodeGuard: AI-Powered Code Quality Analyzer
 
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/{username}/CodeGuard-AI-Powered-Code-Quality-Analyzer/.github%2Fworkflows%2Fcode_quality.yml?label=Code%20Quality)
+![GitHub last commit](https://img.shields.io/github/last-commit/{username}/CodeGuard-AI-Powered-Code-Quality-Analyzer)
+
 ## Overview
 CodeGuard is a lightweight tool that analyzes JavaScript (React) and Python (FastAPI) code files, scoring them on clean coding practices and providing recommendations for improvement. It helps developers maintain high-quality, readable, and maintainable code by evaluating aspects like naming conventions, modularity, documentation, formatting, and best practices.
 
@@ -21,10 +24,18 @@ React (File Upload + Result Display)
 FastAPI (Python)
 
 **Libraries & Tools**  
-Python: pylint, flake8, radon (for Python code analysis)  
+Python: pylint, flake8, radon, bandit (for Python code analysis)  
 JavaScript: eslint, regex-based static analysis
 
 ## Installation & Setup
+1. **Configure Environment Files**
+```bash
+# Backend configuration
+echo 'OPENAI_API_KEY=your_api_key_here' > backend/.env
+
+# Frontend configuration
+echo 'REACT_APP_API_URL=http://localhost:8000' > frontend/.env
+```
 1. **Clone the Repository**
 ```bash
 git clone https://github.com/yourusername/codeguard.git
@@ -63,15 +74,14 @@ npm start
 -------------------------------------------
 | Category                    | Weightage |
 |-----------------------------|-----------|
-| Naming Conventions          | 10%       |
-| Function Length & Modularity| 20%       |
-| Comments & Documentation    | 20%       |
-| Formatting & Indentation    | 15%       |      
-| Reusability & DRY           | 15%       |
-| Best Practices in Web Dev   | 20%       |
+| Code Quality                | 60% (Python) / 50% (JS) |
+| Code Style                  | 10% (Python) / 20% (JS) |
+| Security                    | 20% (JS) / 15% (Python)|
+| Modularity                  | 15% (Python) / 10% (JS)|
+| Documentation               | 5% (Python)            |
 -------------------------------------------
 ## Future Improvements
-- 🚀 Add support for more languages like TypeScript and Go
+- 🚀 Add support for more languages like Go and Java
 
 ## Contributing
 We welcome contributions! Feel free to fork the repo and submit pull requests.

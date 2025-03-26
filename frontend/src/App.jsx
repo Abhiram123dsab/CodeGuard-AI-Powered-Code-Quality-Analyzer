@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
+import './App.css';
 import ScoreDisplay from './components/ScoreDisplay';
 
 function App() {
@@ -23,11 +24,26 @@ function App() {
       });
       
       if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `API Error: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      setResults(data);
+      // Transform backend response to match frontend expectations
+      const transformedData = {
+        score: data.overall_score || 0,
+        categories: data.categories?.reduce((acc, category) => ({
+          ...acc,
+          [category.name.toLowerCase()]: {
+            score: category.score,
+            issues: category.issues
+          }
+        }), {}) || {},
+        recommendations: data.recommendations?.length 
+          ? data.recommendations 
+          : ['No specific recommendations available']
+      };
+      setResults(transformedData);
     } catch (err) {
       setError(err.message || 'An error occurred during file analysis');
       console.error('Error uploading file:', err);
